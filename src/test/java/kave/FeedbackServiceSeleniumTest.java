@@ -40,148 +40,154 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  */
 public class FeedbackServiceSeleniumTest {
 
-    private static final By growlNoticeLocator = By.className("growl-notice");
-    private static final By growlErrorLocator = By.className("growl-error");
+	private static final By growlNoticeLocator = By.className("growl-notice");
+	private static final By growlErrorLocator = By.className("growl-error");
 
-    private static File dataDir = new File("data");
-    private static File tmpDir = new File("tmp");
+	private static File dataDir = new File("data");
+	private static File tmpDir = new File("tmp");
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+	@Rule
+	public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private boolean isJavascriptEnabled = true;
-    private FirefoxDriver driver;
-    private FirefoxProfile profile;
-    private FeedbackServiceFixture fix;
+	private boolean isJavascriptEnabled = true;
+	private FirefoxDriver driver;
+	private FirefoxProfile profile;
+	private FeedbackServiceFixture fix;
 
-    @Before
-    @After
-    public void clearOutputDirectory() throws IOException {
-        fix = new FeedbackServiceFixture(tempFolder.getRoot());
-        FileUtils.deleteDirectory(dataDir);
-        FileUtils.deleteDirectory(tmpDir);
-    }
+	@Before
+	@After
+	public void clearOutputDirectory() throws IOException {
+		fix = new FeedbackServiceFixture(tempFolder.getRoot());
+		FileUtils.deleteDirectory(dataDir);
+		FileUtils.deleteDirectory(tmpDir);
+	}
 
-    @After
-    public void closeBrowser() {
-        driver.close();
-        driver.quit();
-    }
+	@After
+	public void closeBrowser() {
+		try {
+			driver.close();
+		} catch (Exception e) {
+		}
+		try {
+			driver.quit();
+		} catch (Exception e) {
+		}
+	}
 
-    @Test
-    public void shouldBeDisabledIfJavascriptIsDisabled() {
-        isJavascriptEnabled = false;
-        givenPageIsLoaded();
+	@Test
+	public void shouldBeDisabledIfJavascriptIsDisabled() {
+		isJavascriptEnabled = false;
+		givenPageIsLoaded();
 
-        WebElement submitButton = driver.findElementByXPath("//button");
-        assertFalse(submitButton.isEnabled());
-    }
+		WebElement submitButton = driver.findElementByXPath("//button");
+		assertFalse(submitButton.isEnabled());
+	}
 
-    @Test
-    public void shouldSucceedIfInputIsCorrect() throws IOException {
-        givenPageIsLoaded();
+	@Test
+	public void shouldSucceedIfInputIsCorrect() throws IOException {
+		givenPageIsLoaded();
 
-        File fileToUpload = fix.getZipFile();
+		File fileToUpload = fix.getZipFile();
 
-        whenFileIsSelected(fileToUpload);
-        whenConfirmationIsSelected();
-        whenFormIsSubmitted();
+		whenFileIsSelected(fileToUpload);
+		whenConfirmationIsSelected();
+		whenFormIsSubmitted();
 
-        thenResponseIs(growlNoticeLocator, "File upload was successful.");
-        File fileName = findUploadedFileName();
-        FeedbackServiceTest.assertDirectoryContainsZipFile(fileName.getParentFile(), fileName.getName(), fileToUpload);
-    }
+		thenResponseIs(growlNoticeLocator, "File upload was successful.");
+		File fileName = findUploadedFileName();
+		FeedbackServiceTest.assertDirectoryContainsZipFile(fileName.getParentFile(), fileName.getName(), fileToUpload);
+	}
 
-    private File findUploadedFileName() {
-        String[] dates = dataDir.list();
-        File subFolder = new File(dataDir, dates[0]);
-        String[] zips = subFolder.list();
-        return new File(subFolder, zips[0]);
-    }
+	private File findUploadedFileName() {
+		String[] dates = dataDir.list();
+		File subFolder = new File(dataDir, dates[0]);
+		String[] zips = subFolder.list();
+		return new File(subFolder, zips[0]);
+	}
 
-    @Test
-    public void shouldFailIfInputIsNotAZip() throws IOException {
-        givenPageIsLoaded();
+	@Test
+	public void shouldFailIfInputIsNotAZip() throws IOException {
+		givenPageIsLoaded();
 
-        File fileToUpload = fix.getRandomFile();
+		File fileToUpload = fix.getRandomFile();
 
-        whenFileIsSelected(fileToUpload);
-        whenConfirmationIsSelected();
-        whenFormIsSubmitted();
+		whenFileIsSelected(fileToUpload);
+		whenConfirmationIsSelected();
+		whenFormIsSubmitted();
 
-        thenResponseIs(growlErrorLocator, UploadCleanser.NO_ZIP);
-    }
+		thenResponseIs(growlErrorLocator, UploadCleanser.NO_ZIP);
+	}
 
-    @Test
-    public void shouldFailIfInputIsEmptyZip() throws IOException {
-        givenPageIsLoaded();
+	@Test
+	public void shouldFailIfInputIsEmptyZip() throws IOException {
+		givenPageIsLoaded();
 
-        File fileToUpload = fix.getEmptyZipFile();
+		File fileToUpload = fix.getEmptyZipFile();
 
-        whenFileIsSelected(fileToUpload);
-        whenConfirmationIsSelected();
-        whenFormIsSubmitted();
+		whenFileIsSelected(fileToUpload);
+		whenConfirmationIsSelected();
+		whenFormIsSubmitted();
 
-        thenResponseIs(growlErrorLocator, UploadCleanser.EMPTY_FILE);
-    }
+		thenResponseIs(growlErrorLocator, UploadCleanser.EMPTY_FILE);
+	}
 
-    @Test
-    public void shouldFailIfConfirmationIsNotSelected() throws IOException {
-        givenPageIsLoaded();
+	@Test
+	public void shouldFailIfConfirmationIsNotSelected() throws IOException {
+		givenPageIsLoaded();
 
-        File fileToUpload = fix.getRandomFile();
+		File fileToUpload = fix.getRandomFile();
 
-        whenFileIsSelected(fileToUpload);
-        whenFormIsSubmitted();
+		whenFileIsSelected(fileToUpload);
+		whenFormIsSubmitted();
 
-        thenResponseIs(growlErrorLocator, "Please confirm the disclaimer before submitting a file.");
-    }
+		thenResponseIs(growlErrorLocator, "Please confirm the disclaimer before submitting a file.");
+	}
 
-    @Test
-    public void shouldFailIfNothingSelected() throws IOException {
-        givenPageIsLoaded();
+	@Test
+	public void shouldFailIfNothingSelected() throws IOException {
+		givenPageIsLoaded();
 
-        whenFormIsSubmitted();
+		whenFormIsSubmitted();
 
-        thenResponseIs(growlErrorLocator, "Please confirm the disclaimer before submitting a file.");
-    }
+		thenResponseIs(growlErrorLocator, "Please confirm the disclaimer before submitting a file.");
+	}
 
-    @Test
-    public void shouldFailIfNoFileSelected() throws IOException {
-        givenPageIsLoaded();
+	@Test
+	public void shouldFailIfNoFileSelected() throws IOException {
+		givenPageIsLoaded();
 
-        whenConfirmationIsSelected();
-        whenFormIsSubmitted();
+		whenConfirmationIsSelected();
+		whenFormIsSubmitted();
 
-        thenResponseIs(growlErrorLocator, "No file was selected.");
-    }
+		thenResponseIs(growlErrorLocator, "No file was selected.");
+	}
 
-    private void givenPageIsLoaded() {
-        profile = new FirefoxProfile();
-        profile.setPreference("javascript.enabled", isJavascriptEnabled);
-        driver = new FirefoxDriver(profile);
-        driver.get("http://localhost:8080");
-    }
+	private void givenPageIsLoaded() {
+		profile = new FirefoxProfile();
+		profile.setPreference("javascript.enabled", isJavascriptEnabled);
+		driver = new FirefoxDriver(profile);
+		driver.get("http://localhost:8080");
+	}
 
-    private void whenConfirmationIsSelected() {
-        WebElement confirmationCheckbox = driver.findElementByXPath("//input[@type='checkbox']");
-        confirmationCheckbox.click();
-    }
+	private void whenConfirmationIsSelected() {
+		WebElement confirmationCheckbox = driver.findElementByXPath("//input[@type='checkbox']");
+		confirmationCheckbox.click();
+	}
 
-    private void whenFileIsSelected(File fileToUpload) {
-        WebElement fileInput = driver.findElementByXPath("//input[@type='file']");
-        fileInput.sendKeys(fileToUpload.getAbsolutePath());
-    }
+	private void whenFileIsSelected(File fileToUpload) {
+		WebElement fileInput = driver.findElementByXPath("//input[@type='file']");
+		fileInput.sendKeys(fileToUpload.getAbsolutePath());
+	}
 
-    private void whenFormIsSubmitted() {
-        WebElement submitButton = driver.findElementByXPath("//button");
-        submitButton.click();
-    }
+	private void whenFormIsSubmitted() {
+		WebElement submitButton = driver.findElementByXPath("//button");
+		submitButton.click();
+	}
 
-    private void thenResponseIs(By growlLocator, String message) {
-        new WebDriverWait(driver, 5).until(presenceOfElementLocated(growlLocator));
-        WebElement growl = driver.findElement(growlLocator);
-        WebElement title = growl.findElement(By.className("growl-title"));
-        assertEquals(message, title.getText());
-    }
+	private void thenResponseIs(By growlLocator, String message) {
+		new WebDriverWait(driver, 5).until(presenceOfElementLocated(growlLocator));
+		WebElement growl = driver.findElement(growlLocator);
+		WebElement title = growl.findElement(By.className("growl-title"));
+		assertEquals(message, title.getText());
+	}
 }
