@@ -21,9 +21,11 @@ package kave;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import kave.Result.State;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Test;
+
+import kave.Result.State;
 
 public class ResultTest {
 
@@ -85,7 +87,9 @@ public class ResultTest {
     }
 
     private String getFailString() {
-        return "java.lang.RuntimeException: MESSAGE<br />\n\tat CLASS.METHOD1(Unknown Source)<br />\n\tat CLASS.METHOD2(Unknown Source)<br />\n";
+    	boolean isWin = SystemUtils.IS_OS_WINDOWS;
+    	String nl = (isWin?"\r":"") + "<br />\n";
+        return "java.lang.RuntimeException: MESSAGE"+nl+"\tat CLASS.METHOD1(Unknown Source)"+nl+"\tat CLASS.METHOD2(Unknown Source)"+nl;
     }
 
     private Throwable mockThrowable() {

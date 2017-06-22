@@ -35,92 +35,94 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 public class UploadCleanser {
 
-    public static final String EMPTY_FILE = "File is empty or does not contain valid interactions.";
-    public static final String NO_ZIP = "No valid .zip file provided";
+	public static final String EMPTY_FILE = "File is empty or does not contain valid interactions.";
+	public static final String NO_ZIP = "No valid .zip file provided";
 
-    private UniqueFileCreator ufc;
-    private ObjectMapper mapper;
+	private UniqueFileCreator ufc;
+	private ObjectMapper mapper;
 
-    public UploadCleanser(UniqueFileCreator ufc) {
-        this.ufc = ufc;
-        mapper = new ObjectMapper();
-        mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-    }
+	public UploadCleanser(UniqueFileCreator ufc) {
+		this.ufc = ufc;
+		mapper = new ObjectMapper();
+		mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+	}
 
-    public File purify(File in) throws IOException {
-        File out = ufc.createNextUniqueFile();
-        ZipFile zfin = null;
+	public File purify(File in) throws IOException {
+		File out = ufc.createNextUniqueFile();
+		ZipFile zfin = null;
 
-        try {
-            zfin = new ZipFile(in);
-            cloneTo(zfin, out);
-        } catch (ZipException e) {
-            FileUtils.deleteQuietly(in);
-            FileUtils.deleteQuietly(out);
-            throw new KaVEException(NO_ZIP);
-        } catch (KaVEException ke) {
-            FileUtils.deleteQuietly(in);
-            FileUtils.deleteQuietly(out);
-            throw ke;
-        } finally {
-            closeQuietly(zfin);
-        }
+		boolean deleteOut = true;
+		try {
+			zfin = new ZipFile(in);
+			cloneTo(zfin, out);
+			deleteOut = false;
+		} catch (ZipException e) {
+			throw new KaVEException(NO_ZIP);
+		} catch (KaVEException ke) {
+			throw ke;
+		} finally {
+			closeQuietly(zfin);
+			FileUtils.deleteQuietly(in);
+			if (deleteOut) {
+				FileUtils.deleteQuietly(out);
+			}
+		}
 
-        return out;
-    }
+		return out;
+	}
 
-    private void cloneTo(ZipFile zfin, File out) throws FileNotFoundException, IOException {
-        ZipOutputStream zfout = null;
-        try {
-            int num = 0;
-            zfout = new ZipOutputStream(new FileOutputStream(out));
+	private void cloneTo(ZipFile zfin, File out) throws FileNotFoundException, IOException {
+		ZipOutputStream zfout = null;
+		try {
+			int num = 0;
+			zfout = new ZipOutputStream(new FileOutputStream(out));
 
-            Enumeration<? extends ZipEntry> entries = zfin.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                Map<String, Object> content = readEntry(zfin, entry);
+			Enumeration<? extends ZipEntry> entries = zfin.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				Map<String, Object> content = readEntry(zfin, entry);
 
-                if (content != null) {
-                    String fileName = (num++) + ".json";
-                    putEntry(content, zfout, fileName);
-                }
-            }
-            if (num == 0) {
-                throw new KaVEException(EMPTY_FILE);
-            }
-        } finally {
-            IOUtils.closeQuietly(zfout);
-        }
-    }
+				if (content != null) {
+					String fileName = (num++) + ".json";
+					putEntry(content, zfout, fileName);
+				}
+			}
+			if (num == 0) {
+				throw new KaVEException(EMPTY_FILE);
+			}
+		} finally {
+			IOUtils.closeQuietly(zfout);
+		}
+	}
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> readEntry(ZipFile zfin, ZipEntry entry) throws IOException {
-        InputStream zein = null;
-        Map<String, Object> content = null;
-        try {
-            zein = zfin.getInputStream(entry);
-            content = mapper.readValue(zein, Map.class);
-        } catch (Exception e) {
-            // just ignore file
-        } finally {
-            IOUtils.closeQuietly(zein);
-        }
-        return content;
-    }
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> readEntry(ZipFile zfin, ZipEntry entry) throws IOException {
+		InputStream zein = null;
+		Map<String, Object> content = null;
+		try {
+			zein = zfin.getInputStream(entry);
+			content = mapper.readValue(zein, Map.class);
+		} catch (Exception e) {
+			// just ignore file
+		} finally {
+			IOUtils.closeQuietly(zein);
+		}
+		return content;
+	}
 
-    private void putEntry(Map<String, Object> content, ZipOutputStream zfout, String fileName) throws IOException {
-        zfout.putNextEntry(new ZipEntry(fileName));
-        mapper.writeValue(zfout, content);
-        zfout.closeEntry();
-    }
+	private void putEntry(Map<String, Object> content, ZipOutputStream zfout, String fileName) throws IOException {
+		zfout.putNextEntry(new ZipEntry(fileName));
+		mapper.writeValue(zfout, content);
+		zfout.closeEntry();
+	}
 
-    private static void closeQuietly(Closeable c) {
-        try {
-            if (c != null) {
-                c.close();
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-    }
+	private static void closeQuietly(Closeable c) {
+		try {
+			if (c != null) {
+				c.close();
+			}
+		} catch (Exception e) {
+			// ignore
+		}
+	}
 }
