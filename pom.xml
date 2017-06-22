@@ -154,9 +154,7 @@
 				<version>2.16</version>
 				<configuration>
 					<includes>
-						<!-- disabled for headless build 
 						<include>**/*SeleniumTest.java</include>
-						-->
 					</includes>
 				</configuration>
 				<executions>
