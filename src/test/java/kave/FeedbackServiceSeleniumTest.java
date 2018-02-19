@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -38,6 +39,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * make sure you run this test via Maven. If you would like to run it from
  * within Eclipse (e.g., to debug it), you have to manually start the server
  */
+@Ignore("required Firefox version is no longer supported in current macOS")
 public class FeedbackServiceSeleniumTest {
 
 	private static final By growlNoticeLocator = By.className("growl-notice");
