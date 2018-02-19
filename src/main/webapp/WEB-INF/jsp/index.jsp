@@ -73,7 +73,7 @@
 
 		<dl class="cf space">
 			<dt>Project lead / legal contact:</dt>
-			<dd><a href="http://www.stg.tu-darmstadt.de/staff/sebastian_proksch/">Sebastian Proksch</a></dd>
+			<dd><a href="http://www.proks.ch/">Sebastian Proksch</a></dd>
 			<dt>More Information:</dt>
 			<dd><a href="http://www.kave.cc">KaVE Project Website</a></dd>
 		</dl>
